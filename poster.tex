@@ -1,0 +1,70 @@
+\documentclass{tikzposter}
+
+% \settitle{\vbox{
+%      \color{titlefgcolor} {\bfseries \Huge \sc \@title \par}
+%      \vspace*{1em}
+%      {\LARGE \@author \par} \vspace*{1em} {\large \@institute}
+% }}
+
+\makeatletter
+\renewcommand\TP@maketitle{%
+   \begin{minipage}{0.8\linewidth}
+        \color{titlefgcolor}
+        {\bfseries \Huge \sc \@title \par}
+        \vspace*{1em}
+        {\huge \@author \par}
+        \vspace*{1em}
+        {\LARGE \@institute}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.2\linewidth}
+       \centering
+       \includegraphics[width=16cm]{uoa}
+    \end{minipage}
+}
+\makeatother
+
+\title{Efficient Bayesian Evolutionary Analysis using Hamiltonian Monte Carlo}
+\author{\textbf{Arman Bilge}, Tim Vaughan, \& Alexei J. Drummond}
+\institute{email: \texttt{abil933@aucklanduni.ac.nz}}
+
+\usetheme{Autumn}
+\usecolorstyle{Russia}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{sfmath}
+
+% Surface plot
+\usepackage{pgfplots}
+\pgfplotsset{width=30cm,compat=newest}
+\usepgfplotslibrary{patchplots}
+
+
+\begin{document}
+
+    \maketitle
+
+    \begin{columns}
+
+        \column{0.5}
+
+        \block{Surface}{
+            \begin{tikzpicture}
+            \begin{axis}
+
+            \addplot3[surf]
+            table {surface.dat};
+            \end{axis}
+            \end{tikzpicture}
+        }
+
+        \column{0.5}
+
+        \block{Thanks to}{
+            SMBE Undergraduate Travel Award \\
+            \includegraphics[width=10cm]{awc}
+            \includegraphics[width=10cm]{nesi}
+        }
+
+    \end{columns}
+
+\end{document}
