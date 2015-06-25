@@ -25,8 +25,8 @@
 \makeatother
 
 \title{Efficient Bayesian Evolutionary Analysis using Hamiltonian Monte Carlo}
-\author{\textbf{Arman Bilge}, Tim Vaughan, \& Alexei J. Drummond}
-\institute{email: \texttt{abil933@aucklanduni.ac.nz}}
+\author{\textbf{Arman Bilge}, Tim Vaughan, and Alexei Drummond}
+\institute{email: \texttt{armanbilge@gmail.com}}
 
 \usetheme{Autumn}
 \usecolorstyle{Russia}
@@ -38,6 +38,15 @@
 \pgfplotsset{width=30cm,compat=newest}
 \usepgfplotslibrary{patchplots}
 
+\usepackage{mathtools}
+\newcommand{\dd}{\, \mathrm{d}}
+\renewcommand{\vec}[1]{\ensuremath{\boldsymbol{\mathbf{#1}}}}
+\newcommand{\mat}[1]{\ensuremath{\boldsymbol{\mathbf{#1}}}}
+\newcommand{\op}[1]{\ensuremath{\boldsymbol{\mathbf{#1}}}}
+\newcommand{\norm}[1]{\ensuremath{\mathcal{N}\left(#1\right)}}
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \begin{document}
 
@@ -47,19 +56,84 @@
 
         \column{0.5}
 
-        \block{Surface}{
-            \begin{tikzpicture}
-            \begin{axis}
+        \block{Hamiltonian Dynamics}{
+            Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
+            
+            Consider a particle with position $\vec{q}$ and momentum $\vec{p}$.
+            
+            Then the Hamiltonian for our system is
+            \begin{equation}
+                H\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right)
+            \end{equation}
+            with potential energy
+            \begin{equation}
+                U\left(\vec{q}\right) = -\log{\pi\left(\vec{q}\right)}
+            \end{equation}
+            and kinetic energy
+            \begin{equation}
+                K\left(\vec{p}\right) = \frac{1}{2} \vec{p}^T \mat{M} \vec{p}
+            \end{equation}
+            where $\mat{M}$ represents the particle's mass.
+            
+            The 
+            
+            The system's dynamics are described by Hamilton's equations
+            \begin{equation}
+                \frac{\dd \vec{q}}{\dd t} = \frac{\partial H}{\partial \vec{p}},
+                \frac{\dd \vec{p}}{\dd t} = -\frac{\partial H}{\partial \vec{q}},
+            \end{equation}
+            which are integrated to find the state at a particular time.
+        }
 
-            \addplot3[surf]
-            table {surface.dat};
-            \end{axis}
-            \end{tikzpicture}
+        \block{The HMC Algorithm}{
+        
+            \innerblock{Flip Operator}{
+                text text
+            }
+        
+            \innerblock{Leapfrog Operator}{
+                text text
+            }
+        
+            \innerblock{Momentum Randomization Operator}{
+                text text
+            }
+        
+            \begin{algorithmic}[1]
+            \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
+                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\}
+                    \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$
+                \State $a \leftarrow \min\left(1,
+                    \exp\left(
+                        H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime,
+                            \vec{p}^\prime\right)\right)\right)$
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
+                    \begin{cases}
+                        \left\{\vec{q}^\prime, \vec{p}^\prime\right\}
+                            & \text{with probability } a \\
+                        \left\{\vec{q},\vec{p}\right\}
+                            & \text{with probability } 1 - a
+                    \end{cases}$
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
+                            \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$
+                \State \Return $\left\{\vec{q},\vec{p}\right\}$
+            \EndFunction
+            \end{algorithmic}
+        }
+
+        \block{Surface}{
+            \begin{tikzfigure}[Caption?]
+                \begin{tikzpicture}
+                    \begin{axis}
+                        \addplot3[surf] table {surface.dat};
+                    \end{axis}
+                \end{tikzpicture}
+            \end{tikzfigure}
         }
 
         \column{0.5}
 
-        \block{Thanks to}{
+        \block{Acknowledgements}{
             SMBE Undergraduate Travel Award \\
             \includegraphics[width=10cm]{awc}
             \includegraphics[width=10cm]{nesi}
