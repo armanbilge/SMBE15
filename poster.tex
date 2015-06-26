@@ -25,7 +25,7 @@
 \makeatother
 
 \title{Efficient Bayesian Evolutionary Analysis using Hamiltonian Monte Carlo}
-\author{\textbf{Arman Bilge}, Tim Vaughan, and Alexei Drummond}
+\author{\textbf{Arman Bilge}, Tim Vaughan, and Alexei J. Drummond}
 \institute{email: \texttt{armanbilge@gmail.com}}
 
 \usetheme{Autumn}
@@ -36,7 +36,6 @@
 % Surface plot
 \usepackage{pgfplots}
 \pgfplotsset{width=30cm,compat=newest}
-\usepgfplotslibrary{patchplots}
 
 \usepackage{mathtools}
 \newcommand{\dd}{\, \mathrm{d}}
@@ -58,9 +57,9 @@
 
         \block{Hamiltonian Dynamics}{
             Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
-            
+
             Consider a particle with position $\vec{q}$ and momentum $\vec{p}$.
-            
+
             Then the Hamiltonian for our system is
             \begin{equation}
                 H\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right)
@@ -74,9 +73,9 @@
                 K\left(\vec{p}\right) = \frac{1}{2} \vec{p}^T \mat{M} \vec{p}
             \end{equation}
             where $\mat{M}$ represents the particle's mass.
-            
-            The 
-            
+
+            The
+
             The system's dynamics are described by Hamilton's equations
             \begin{equation}
                 \frac{\dd \vec{q}}{\dd t} = \frac{\partial H}{\partial \vec{p}},
@@ -86,19 +85,19 @@
         }
 
         \block{The HMC Algorithm}{
-        
+
             \innerblock{Flip Operator}{
                 text text
             }
-        
+
             \innerblock{Leapfrog Operator}{
                 text text
             }
-        
+
             \innerblock{Momentum Randomization Operator}{
                 text text
             }
-        
+
             \begin{algorithmic}[1]
             \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
                 \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\}
@@ -124,7 +123,7 @@
         \block{Surface}{
             \begin{tikzfigure}[Caption?]
                 \begin{tikzpicture}
-                    \begin{axis}
+                    \begin{axis}[colormap/greenyellow, view={40}{20}, xlabel=$t_1$, ylabel=$t_2$, zlabel=$U\left(\vec{q}\right)$]
                         \addplot3[surf] table {surface.dat};
                     \end{axis}
                 \end{tikzpicture}
