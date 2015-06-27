@@ -25,7 +25,7 @@
 \makeatother
 
 \title{Efficient Bayesian Evolutionary Analysis using Hamiltonian Monte Carlo}
-\author{\textbf{Arman Bilge}, Tim Vaughan, and Alexei J. Drummond}
+\author{\textbf{Arman Bilge}, Timothy Vaughan, and Alexei J. Drummond}
 \institute{email: \texttt{armanbilge@gmail.com}}
 
 \usetheme{Autumn}
@@ -34,6 +34,8 @@
 \usepackage{sfmath}
 
 % Surface plot
+\tikzset{>=latex}
+\usetikzlibrary{arrows.meta}
 \usepackage{pgfplots}
 \pgfplotsset{width=30cm,compat=newest}
 
@@ -55,6 +57,15 @@
 
         \column{0.5}
 
+        \block{Motivation}{
+            \begin{itemize}
+                \item Bayesian evolutionary analysis is a powerful tool for rate estimation, divergence dating, phylogeography, species tree estimation, etc.
+                \item Usually implemented with the Markov chain Monte Carlo algorithm (MCMC)
+                \item MCMC has poor performance
+                \item Hamiltonian Monte Carlo (HMC)
+            \end{itemize}
+        }
+
         \block{Hamiltonian Dynamics}{
             Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
 
@@ -75,28 +86,59 @@
             where $\mat{M}$ represents the particle's mass.
 
             The system's dynamics are described by Hamilton's equations
-            \begin{equation}
-                \frac{\dd \vec{q}}{\dd t} = \frac{\partial H}{\partial \vec{p}},
-            \end{equation}
-            and
-            \begin{equation}
-                \frac{\dd \vec{p}}{\dd t} = -\frac{\partial H}{\partial \vec{q}},
-            \end{equation}
+            \begin{align}
+                \frac{\dd \vec{q}}{\dd t} &= \frac{\partial H}{\partial \vec{p}}, \\
+                \frac{\dd \vec{p}}{\dd t} &= -\frac{\partial H}{\partial \vec{q}},
+            \end{align}
             which are integrated to find the state at a particular time.
         }
 
         \block{The HMC Algorithm}{
 
+            The three operators.
+
             \innerblock{Flip Operator}{
-                text text
+                Flips the particle's momentum.
+                \begin{equation}
+                    \op{F}\left\{\vec{q},\vec{p}\right\} = \left\{\vec{q},-\vec{p}\right\}
+                \end{equation}
+                \centering
+                \begin{tikzpicture}[scale=1.5]
+                    \draw [very thick] (-3,0) -- (3,0);
+                    \draw [very thick] (0,-3) -- (0,3);
+                    \draw [arrows={*->[scale=100]}, line width=1mm] (-2,-1) -- (-1,-0.125);
+
+                    \draw[-{>[scale=0.25]}, line width=1cm] (4,0) -- (5.5,0);
+                    \node at (4.6,1) {$\op F$};
+                \end{tikzpicture}
+                \qquad
+                \begin{tikzpicture}
+                    \begin{axis}[width=10cm,
+                                 axis x line=center,
+                                 axis y line=center,
+                                 ticks=none,
+                                 xmin=-3,
+                                 xmax=3,
+                                 ymin=-3,
+                                 ymax=3]
+                        \addplot [line width=1mm, *->] plot coordinates {(-2,-1) (-1,-0.125)};
+                    \end{axis}
+                \end{tikzpicture}
             }
 
             \innerblock{Leapfrog Operator}{
-                text text
+                Simulates the motion of the particle for some time $s=\epsilon L$ by making $L$ leapfrog steps of size $\epsilon$.
+                \begin{equation}
+                    \op{L}\left\{\vec{q}^t,\vec{p}^t\right\} = \left\{\vec{q}^{t+s},\vec{p}^{t+s}\right\}
+                \end{equation}
             }
 
             \innerblock{Momentum Randomization Operator}{
-                text text
+                Randomizes the particle's momentum.
+                \begin{equation}
+                    \op{R}\left\{\vec{q},\vec{p}\right\} = \left\{\vec{q}, \sqrt{1-\alpha}\vec{p} + \sqrt{\alpha}\vec{n}\right\},
+                    \vec{n} \sim \norm{\vec{0}, \mat{M}^{-1}},
+                \end{equation}
             }
 
             \begin{algorithmic}[1]
@@ -121,33 +163,77 @@
             \end{algorithmic}
         }
 
-        \block{Surface}{
-            \begin{tikzfigure}[Caption?]
+        \column{0.5}
+
+        \block{HMC versus MCMC}{
+
+            \centering
+            % \begin{tikzfigure}
                 \begin{tikzpicture}
+                    % Tree
+                    \draw [line width=1mm] (2.5,16.5) -- (2.5,18.5);
+                    \draw [line width=1mm] (5.5,16.5) -- (5.5,18.5);
+                    \draw [line width=1mm] (2.5,18.5) -- (5.5,18.5);
+                    \draw [line width=1mm] (4,18.5) -- (4,20.5);
+                    \draw [line width=1mm] (8.5,16.5) -- (8.5,20.5);
+                    \draw [line width=1mm] (4,20.5) -- (8.5,20.5);
+                    \draw [line width=1mm] (6.25,20.5) -- (6.25,21.5);
+                    \draw [ultra thick, dashed] (2.5,16.5) -- (10,16.5);
+                    \draw [ultra thick, dashed] (2.5,18.5) -- (10,18.5);
+                    \draw [ultra thick, dashed] (2.5,20.5) -- (10,20.5);
+                    \node at (10,17.5) {$t_2$};
+                    \node at (10,19.5) {$t_1$};
+
+                    % Legend
+                    \draw [line width=1mm, red] (16,22) -- (17,22);
+                    \draw [line width=1mm, violet] (16,21) -- (17,21);
+                    \node [text=red, right] at (17.125,22) {\textbf{HMC}};
+                    \node [text=violet, right] at (17.125,21) {\textbf{MCMC}};
+
                     \begin{axis}[colormap/greenyellow,
-                                 view={40}{20},
+                                 mesh/interior colormap={graygray}{color=(gray) color=(gray)},
+                                 /pgf/number format/1000 sep={},
+                                 view={72}{32},
                                  xlabel=$t_1$,
                                  ylabel=$t_2$,
                                  zlabel=$U\left(\vec{q}\right)$,
                                  zlabel style={rotate=-90},
                                  xtick={0,0.2,...,2},
                                  ytick={0,0.2,...,1},
-                                 ztick={1000,1020,...,2000}
+                                 ztick={1000,1020,...,1200}
                                  ]
                         \addplot3[surf] table {surface.dat};
-                        \addplot3 table {hmc.dat};
-                        \addplot3 table {mcmc.dat};
+                        \addplot3[violet, mark=*, line width=1mm] table {mcmc.dat};
+                        \addplot3[red, mark=square*, line width=1mm] table {hmc.dat};
                     \end{axis}
                 \end{tikzpicture}
-            \end{tikzfigure}
+            % \end{tikzfigure}
         }
 
-        \column{0.5}
+        \block{Future Directions}{
+            \begin{itemize}
+                \item Automatic tuning of parameters
+            \end{itemize}
+        }
 
         \block{Acknowledgements}{
             SMBE Undergraduate Travel Award \\
             \includegraphics[width=10cm]{awc}
             \includegraphics[width=10cm]{nesi}
+        }
+
+        \block{References}{
+            \hangindent=50pt Alexei J. Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. In: \emph{Mol Biol Evol} 29.8 (2012).
+
+            \hangindent=50pt Simon Duane et al. `Hybrid Monte Carlo'. In: \emph{Physics Letters B} 195.2 (1987).
+
+            % Joseph Felsenstein. `Evolutionary Trees from DNA Sequences: A Maximum Likelihood Approach'. In: \emph{J Mol Evol} 17.6 (1981).
+
+            \hangindent=50pt Nicholas Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. In: \emph{J Chem Phys} 21.6 (1953).
+
+            \hangindent=50pt Radford M. Neal. `MCMC Using Hamiltonian Dynamics'. In: \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
+
+            \hangindent=50pt Eric E. Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. In: \emph{Genome Research} 8.3 (1998).
         }
 
     \end{columns}
