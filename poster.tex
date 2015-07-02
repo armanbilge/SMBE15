@@ -1,4 +1,5 @@
 \documentclass{tikzposter}
+\tikzposterlatexaffectionproofoff
 
 % \settitle{\vbox{
 %      \color{titlefgcolor} {\bfseries \Huge \sc \@title \par}
@@ -20,6 +21,11 @@
     \begin{minipage}{0.2\linewidth}
        \centering
        \includegraphics[width=16cm]{uoa}
+       % \begin{tikzpicture}
+       %     % \clip [rotate around={45:(1,1)}] (0,0) rectangle (2,2);
+       %     \node at (1,1) {\includegraphics[width=16cm]{uoa}};
+       %     \node [rectangle] {};
+       % \end{tikzpicture}
     \end{minipage}
 }
 \makeatother
@@ -28,8 +34,26 @@
 \author{\textbf{Arman Bilge}, Timothy Vaughan, and Alexei J. Drummond}
 \institute{email: \texttt{armanbilge@gmail.com}}
 
+\defineblockstyle{MySlide}{
+    titlewidthscale=1, bodywidthscale=1, titleleft,
+    titleoffsetx=0pt, titleoffsety=0pt, bodyoffsetx=0pt, bodyoffsety=0pt,
+    bodyverticalshift=0pt, roundedcorners=0, linewidth=0pt, titleinnersep=1cm,
+    bodyinnersep=1cm
+}{
+    \ifBlockHasTitle%
+        \draw[draw=none, left color=blocktitlebgcolor, right color=blocktitlebgcolor]
+           (blocktitle.south west) rectangle (blocktitle.north east);
+    \fi%
+    \draw[draw=none, fill=blockbodybgcolor] %
+        (blockbody.north west) [rounded corners=30] -- (blockbody.south west) --
+        (blockbody.south east) [rounded corners=0]-- (blockbody.north east) -- cycle;
+}
+
 \usetheme{Autumn}
 \usecolorstyle{Russia}
+\definecolor{uoanavy}{RGB}{0,60,103}
+\colorlet{titlebgcolor}{uoanavy}
+\useblockstyle{MySlide}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{sfmath}
 
@@ -64,6 +88,9 @@
 
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\algrenewcomment[2][.4\linewidth]{%
+  \leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
+\frenchspacing
 
 \begin{document}
 
@@ -74,6 +101,7 @@
         \column{0.5}
 
         \block{Motivation}{
+            \flushleft
             \begin{itemize}
                 \item Bayesian evolutionary analysis is a powerful tool for rate estimation, divergence dating, phylogeography, species tree estimation, etc.
                 \item Usually implemented with the Markov chain Monte Carlo algorithm (MCMC)
@@ -154,7 +182,7 @@
                     \draw [very thick] (-3,0) -- (3,0);
                     \draw [very thick] (0,-3) -- (0,3);
                     \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (1.5,2) -- (1,1);
-                    \draw [dashed, line width=1.5mm] (-2, -1) -- (-1.5, -0.5) -- (-0.75, 0) -- (0.5, 0.25) -- (2, -0.25) -- (3, 0.25) -- (3.25, 1) -- (3, 1.75) -- (2.25, 2.25) -- (1.5,2);
+                    \draw [dashed, line width=1.5mm] (-2, -1) -- (-1.5, -0.5) -- (-0.75, 0) -- (0.5, 0.25) -- (2, -0.25) -- (2.75, 0.25) -- (3, 1) -- (2.75, 1.75) -- (2.25, 2.25) -- (1.5,2);
                 \end{tikzpicture}
             }
 
@@ -213,21 +241,15 @@
 
             \begin{algorithmic}[1]
             \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
-                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\}
-                    \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$
-                \State $a \leftarrow \min\left(1,
-                    \exp\left(
-                        H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime,
-                            \vec{p}^\prime\right)\right)\right)$
+                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
+                \State $a \leftarrow \min\left(1, \exp\left(H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
                 \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
                     \begin{cases}
-                        \left\{\vec{q}^\prime, \vec{p}^\prime\right\}
-                            & \text{with probability } a \\
-                        \left\{\vec{q},\vec{p}\right\}
-                            & \text{with probability } 1 - a
+                        \left\{\vec{q}^\prime, \vec{p}^\prime\right\} & \text{with probability } a \\
+                        \left\{\vec{q},\vec{p}\right\} & \text{with probability } 1 - a
                     \end{cases}$
-                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
-                            \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$
+                    \Comment{Accept or reject}
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Randomize the momentum}
                 \State \Return $\left\{\vec{q},\vec{p}\right\}$
             \EndFunction
             \end{algorithmic}
@@ -238,7 +260,6 @@
         \block{HMC versus MCMC}{
 
             \centering
-            % \begin{tikzfigure}
                 \begin{tikzpicture}
                     % Tree
                     \draw [line width=1mm] (2.5,16.5) -- (2.5,18.5);
@@ -277,7 +298,6 @@
                         \addplot3[red, mark=square*, line width=1mm] table {hmc.dat};
                     \end{axis}
                 \end{tikzpicture}
-            % \end{tikzfigure}
         }
 
         \block{Future Directions}{
@@ -293,6 +313,8 @@
         }
 
         \block{References}{
+            \flushleft
+
             \hangindent=50pt Alexei J. Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. In: \emph{Mol Biol Evol} 29.8 (2012).
 
             \hangindent=50pt Simon Duane et al. `Hybrid Monte Carlo'. In: \emph{Physics Letters B} 195.2 (1987).
