@@ -5,7 +5,7 @@ CLEAN.include '*.log'
 
 task :default => 'poster.pdf'
 
-file 'poster.pdf' => ['poster.tex', 'surface.dat', 'mcmc.dat', 'hmc.dat']
+file 'poster.pdf' => ['poster.tex', 'surface.dat', 'mcmc.dat', 'hmc.dat', 'performance.dat']
 CLOBBER.include 'poster.pdf'
 
 rule '.pdf' => '.tex' do |t|

@@ -57,9 +57,13 @@
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{sfmath}
 
+\usepackage{enumitem}
+\setlist[itemize]{label=$\triangleright$, labelsep=12pt}
+
 % Surface plot
 \usetikzlibrary{arrows.meta}
 \usepackage{pgfplots}
+\usepackage{pgfplotstable}
 \pgfplotsset{width=30cm,compat=newest}
 
 \makeatletter
@@ -88,8 +92,8 @@
 
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\algrenewcomment[2][.4\linewidth]{%
-  \leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
+\algrenewcomment[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
+
 \frenchspacing
 
 \begin{document}
@@ -103,7 +107,7 @@
         \block{Motivation}{
             \flushleft
             \begin{itemize}
-                \item Bayesian evolutionary analysis is a powerful tool for rate estimation, divergence dating, phylogeography, species tree estimation, etc.
+                \item Bayesian evolutionary analysis is a powerful tool for rate estimation, divergence dating, phylogeography, species tree inference, etc.
                 \item Usually implemented with the Markov chain Monte Carlo algorithm (MCMC)
                 \item MCMC has poor performance
                 \item Hamiltonian Monte Carlo (HMC)
@@ -111,9 +115,10 @@
         }
 
         \block{Hamiltonian Dynamics}{
-            Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
 
-            Consider a particle with position $\vec{q}$ and momentum $\vec{p}$.
+            Imagine a particle of mass $\mat{M}$  with position $\vec{q}$ and momentum $\vec{p}$.
+
+            Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
 
             Then the Hamiltonian for our system is
             \begin{equation*}
@@ -125,9 +130,8 @@
             \end{equation*}
             and kinetic energy
             \begin{equation*}
-                K\left(\vec{p}\right) = \frac{1}{2} \vec{p}^T \mat{M} \vec{p}
+                K\left(\vec{p}\right) = \frac{1}{2} \vec{p}^T \mat{M} \vec{p}.
             \end{equation*}
-            where $\mat{M}$ represents the particle's mass.
 
             The system's dynamics are described by Hamilton's equations
             \begin{align*}
@@ -140,6 +144,21 @@
         \block{The HMC Algorithm}{
 
             The three operators.
+
+            \begin{algorithmic}[1]
+            \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
+                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
+                \State $a \leftarrow \min\left(1, \exp\left(H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
+                    \begin{cases}
+                        \left\{\vec{q}^\prime, \vec{p}^\prime\right\} & \text{with probability } a \\
+                        \left\{\vec{q},\vec{p}\right\} & \text{with probability } 1 - a
+                    \end{cases}$
+                    \Comment{Accept or reject proposal}
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Randomize the momentum}
+                \State \Return $\left\{\vec{q},\vec{p}\right\}$
+            \EndFunction
+            \end{algorithmic}
 
             \innerblock{Flip Operator}{
                 Flips the particle's momentum.
@@ -238,21 +257,6 @@
                     \end{scope}
                 \end{tikzpicture}
             }
-
-            \begin{algorithmic}[1]
-            \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
-                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
-                \State $a \leftarrow \min\left(1, \exp\left(H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
-                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
-                    \begin{cases}
-                        \left\{\vec{q}^\prime, \vec{p}^\prime\right\} & \text{with probability } a \\
-                        \left\{\vec{q},\vec{p}\right\} & \text{with probability } 1 - a
-                    \end{cases}$
-                    \Comment{Accept or reject}
-                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Randomize the momentum}
-                \State \Return $\left\{\vec{q},\vec{p}\right\}$
-            \EndFunction
-            \end{algorithmic}
         }
 
         \column{0.5}
@@ -300,6 +304,19 @@
                 \end{tikzpicture}
         }
 
+        \block{Performance}{
+
+            \begin{tikzpicture}
+                \begin{axis}
+
+                    \addplot[only marks] table {performance.dat};
+                    \addplot table[y={create col/linear regression={y=y}}] {performance.dat};
+
+                \end{axis}
+            \end{tikzpicture}
+
+        }
+
         \block{Future Directions}{
             \begin{itemize}
                 \item Automatic tuning of parameters
@@ -315,17 +332,15 @@
         \block{References}{
             \flushleft
 
-            \hangindent=50pt Alexei J. Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. In: \emph{Mol Biol Evol} 29.8 (2012).
+            \hangindent=50pt A. J. Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. \emph{Mol Biol Evol} 29.8 (2012).
 
-            \hangindent=50pt Simon Duane et al. `Hybrid Monte Carlo'. In: \emph{Physics Letters B} 195.2 (1987).
+            \hangindent=50pt S. Duane et al. `Hybrid Monte Carlo'. \emph{Physics Letters B} 195.2 (1987).
 
-            % Joseph Felsenstein. `Evolutionary Trees from DNA Sequences: A Maximum Likelihood Approach'. In: \emph{J Mol Evol} 17.6 (1981).
+            \hangindent=50pt N. Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. \emph{J Chem Phys} 21.6 (1953).
 
-            \hangindent=50pt Nicholas Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. In: \emph{J Chem Phys} 21.6 (1953).
+            \hangindent=50pt R. M. Neal. `MCMC Using Hamiltonian Dynamics'. \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
 
-            \hangindent=50pt Radford M. Neal. `MCMC Using Hamiltonian Dynamics'. In: \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
-
-            \hangindent=50pt Eric E. Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. In: \emph{Genome Research} 8.3 (1998).
+            \hangindent=50pt E. E. Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. \emph{Genome Research} 8.3 (1998).
         }
 
     \end{columns}
