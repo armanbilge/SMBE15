@@ -53,6 +53,7 @@
 \usecolorstyle{Russia}
 \definecolor{uoanavy}{RGB}{0,60,103}
 \colorlet{titlebgcolor}{uoanavy}
+\colorlet{blocktitlebgcolor}{uoanavy}
 \useblockstyle{MySlide}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{sfmath}
@@ -60,11 +61,18 @@
 \usepackage{enumitem}
 \setlist[itemize]{label=$\triangleright$, labelsep=12pt}
 
-% Surface plot
+% Plots
 \usetikzlibrary{arrows.meta}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
-\pgfplotsset{width=30cm,compat=newest}
+\usepgfplotslibrary{statistics}
+\pgfplotsset{width=32cm,
+             compat=newest,
+             jitter/.style={
+                 x filter/.code={\pgfmathparse{\pgfmathresult+rnd*#1}}
+             },
+             jitter/.default=0
+             }
 
 \makeatletter
 \pgfarrowsdeclare{center*}{center*}
@@ -122,7 +130,7 @@
 
             Then the Hamiltonian for our system is
             \begin{equation*}
-                H\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right)
+                \mathcal{H}\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right)
             \end{equation*}
             with potential energy
             \begin{equation*}
@@ -135,8 +143,8 @@
 
             The system's dynamics are described by Hamilton's equations
             \begin{align*}
-                \frac{\dd \vec{q}}{\dd t} &= \frac{\partial H}{\partial \vec{p}}, \\
-                \frac{\dd \vec{p}}{\dd t} &= -\frac{\partial H}{\partial \vec{q}},
+                \frac{\dd \vec{q}}{\dd t} &= \frac{\partial \mathcal{H}}{\partial \vec{p}}, \\
+                \frac{\dd \vec{p}}{\dd t} &= -\frac{\partial \mathcal{H}}{\partial \vec{q}},
             \end{align*}
             which are integrated to find the particle's position and momentum at a particular time.
         }
@@ -266,24 +274,24 @@
             \centering
                 \begin{tikzpicture}
                     % Tree
-                    \draw [line width=1mm] (2.5,16.5) -- (2.5,18.5);
-                    \draw [line width=1mm] (5.5,16.5) -- (5.5,18.5);
-                    \draw [line width=1mm] (2.5,18.5) -- (5.5,18.5);
-                    \draw [line width=1mm] (4,18.5) -- (4,20.5);
-                    \draw [line width=1mm] (8.5,16.5) -- (8.5,20.5);
-                    \draw [line width=1mm] (4,20.5) -- (8.5,20.5);
-                    \draw [line width=1mm] (6.25,20.5) -- (6.25,21.5);
-                    \draw [ultra thick, dashed] (2.5,16.5) -- (10,16.5);
-                    \draw [ultra thick, dashed] (2.5,18.5) -- (10,18.5);
-                    \draw [ultra thick, dashed] (2.5,20.5) -- (10,20.5);
-                    \node at (10,17.5) {$t_2$};
-                    \node at (10,19.5) {$t_1$};
+                    \draw [line width=1mm] (2.5,18) -- (2.5,20);
+                    \draw [line width=1mm] (5.5,18) -- (5.5,20);
+                    \draw [line width=1mm] (2.5,20) -- (5.5,20);
+                    \draw [line width=1mm] (4,20) -- (4,22);
+                    \draw [line width=1mm] (8.5,18) -- (8.5,22);
+                    \draw [line width=1mm] (4,22) -- (8.5,22);
+                    \draw [line width=1mm] (6.25,22) -- (6.25,23);
+                    \draw [ultra thick, dashed] (2.5,18) -- (10,18);
+                    \draw [ultra thick, dashed] (2.5,20) -- (10,20);
+                    \draw [ultra thick, dashed] (2.5,22) -- (10,22);
+                    \node at (10,19) {$t_2$};
+                    \node at (10,21) {$t_1$};
 
                     % Legend
-                    \draw [line width=1mm, red] (16,22) -- (17,22);
-                    \draw [line width=1mm, violet] (16,21) -- (17,21);
-                    \node [text=red, right] at (17.125,22) {\textbf{HMC}};
-                    \node [text=violet, right] at (17.125,21) {\textbf{MCMC}};
+                    \draw [line width=1mm, red] (16,23) -- (17,23);
+                    \draw [line width=1mm, violet] (16,22) -- (17,22);
+                    \node [text=red, right] at (17.125,23) {\textbf{HMC}};
+                    \node [text=violet, right] at (17.125,22) {\textbf{MCMC}};
 
                     \begin{axis}[colormap/greenyellow,
                                  mesh/interior colormap={graygray}{color=(gray) color=(gray)},
@@ -307,12 +315,20 @@
         \block{Performance}{
 
             \begin{tikzpicture}
-                \begin{axis}
-
-                    \addplot[only marks] table {performance.dat};
-                    \addplot table[y={create col/linear regression={y=y}}] {performance.dat};
-
-                \end{axis}
+                \begin{semilogxaxis}[width=16cm,
+                                     xtick={8,16,32,64},
+                                     ytick={0,4,...,20},
+                                     extra y ticks=1,
+                                     extra y tick labels=,
+                                     extra y tick style={ grid=major, major grid style={thick} },
+                             % x tick label style={/pgf/number format/1000}
+                             ]
+                    \addplot+[uoanavy, only marks,jitter=0.25] table {performance.dat};
+                    % \draw ({rel axis cs:0,0} |- {axis cs:Fx,1}) -- ({axis cs:Fz,1} -| {rel axis cs:1,0});
+                    % \addplot table[y={create col/linear regression={y=y}}] {performance.dat};
+                    \draw (axis cs:\pgfkeysvalueof{/pgfplots/xmin},1) -- (axis cs:\pgfkeysvalueof{/pgfplots/xmax},1);
+                    % \addplot+[boxplot] table {performance.dat};
+                \end{semilogxaxis}
             \end{tikzpicture}
 
         }
@@ -330,17 +346,16 @@
         }
 
         \block{References}{
-            \flushleft
+            \flushleft\small
+            \hangindent=50pt Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. \emph{Mol Biol Evol} 29.8 (2012).
 
-            \hangindent=50pt A. J. Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. \emph{Mol Biol Evol} 29.8 (2012).
+            \hangindent=50pt Duane et al. `Hybrid Monte Carlo'. \emph{Physics Letters B} 195.2 (1987).
 
-            \hangindent=50pt S. Duane et al. `Hybrid Monte Carlo'. \emph{Physics Letters B} 195.2 (1987).
+            \hangindent=50pt Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. \emph{J Chem Phys} 21.6 (1953).
 
-            \hangindent=50pt N. Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. \emph{J Chem Phys} 21.6 (1953).
+            \hangindent=50pt Neal. `MCMC Using Hamiltonian Dynamics'. \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
 
-            \hangindent=50pt R. M. Neal. `MCMC Using Hamiltonian Dynamics'. \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
-
-            \hangindent=50pt E. E. Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. \emph{Genome Research} 8.3 (1998).
+            \hangindent=50pt Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. \emph{Genome Research} 8.3 (1998).
         }
 
     \end{columns}
