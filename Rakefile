@@ -2,6 +2,7 @@ require 'rake/clean'
 
 CLEAN.include '*.aux'
 CLEAN.include '*.log'
+CLEAN.include '*.out'
 
 task :default => 'poster.pdf'
 

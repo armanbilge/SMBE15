@@ -20,11 +20,11 @@
     \hfill
     \begin{minipage}{0.2\linewidth}
        \centering
-       \begin{tikzpicture}[scale=0.07]
-           \begin{scope}[y={(0,-1)}]
+       \begin{tikzpicture}
+           \begin{scope}[scale=0.09, y={(0,-1)}]
                \input{uoa.tex}
            \end{scope}
-           \begin{scope}[y={(0,-1)},shift={(0.75,50)}]
+           \begin{scope}[scale=0.07, y={(0,-1)}, shift={(7,65)}]
                \input{awc.tex}
            \end{scope}
        \end{tikzpicture}
@@ -34,7 +34,7 @@
 
 \title{Efficient Bayesian Evolutionary Analysis using Hamiltonian Monte Carlo}
 \author{\textbf{Arman Bilge}, Timothy Vaughan, and Alexei J. Drummond}
-\institute{email: \texttt{armanbilge@gmail.com}}
+\institute{\Large email: \texttt{abil933@aucklanduni.ac.nz}}
 
 \defineblockstyle{MySlide}{
     titlewidthscale=1, bodywidthscale=1, titleleft,
@@ -60,6 +60,7 @@
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{sfmath}
 
+\usepackage{multicol}
 \usepackage{enumitem}
 \setlist[itemize]{label=$\triangleright$, labelsep=12pt}
 
@@ -71,7 +72,7 @@
 \pgfplotsset{width=32cm,
              compat=newest,
              jitter/.style={
-                 x filter/.code={\pgfmathparse{\pgfmathresult+rnd*#1}}
+                 x filter/.code={\pgfmathparse{\pgfmathresult+rnd*#1-#1/2}}
              },
              jitter/.default=0
              }
@@ -104,6 +105,11 @@
 \usepackage{algpseudocode}
 \algrenewcomment[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
 
+\usepackage{hyperref}
+\usepackage{doi}
+\usepackage{qrcode}
+
+\usepackage[none]{hyphenat}
 \frenchspacing
 
 \begin{document}
@@ -117,46 +123,56 @@
         \block{Motivation}{
             \flushleft
             \begin{itemize}
-                \item Bayesian evolutionary analysis is a powerful tool for rate estimation, divergence dating, phylogeography, species tree inference, etc.
-                \item Usually implemented with the Markov chain Monte Carlo algorithm (MCMC)
-                \item MCMC has poor performance
-                \item Hamiltonian Monte Carlo (HMC)
+                \item Bayesian analysis is a powerful tool for testing evolutionary hypotheses with sequence data
+                \item We want to sample model parameters $\vec{\theta}$ according to probability given the data $P\left(\vec{\theta}\mid\vec{D}\right)$
+                \item Sampling usually done with \textbf{Markov chain Monte Carlo} random walk algorithm
+                \item Random walks move through space slowly and make for \textbf{inefficient samplers}
+                \item \textbf{Hamiltonian Monte Carlo} algorithm applies Newton's laws of motion to methodically traverse the space and \textbf{avoid random walk behaviour}
+                \item HMC uses the space's slope, an \textbf{expensive but theoretically rewarding} calculation
             \end{itemize}
         }
 
         \block{Hamiltonian Dynamics}{
 
-            Imagine a particle of mass $\mat{M}$  with position $\vec{q}$ and momentum $\vec{p}$.
-
-            Let $\pi\left(\vec{q}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$ be the target probability density.
-
-            Then the Hamiltonian for our system is
+            Imagine a frictionless skatepark where the elevation at any point $\vec{x}$ is given by
             \begin{equation*}
-                \mathcal{H}\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right)
+                y = -\log{\pi\left(\vec{x}\right)},
             \end{equation*}
-            with potential energy
+            with $\pi\left(\vec{x}\right) \equiv P\left(\vec{\theta}\mid\vec{D}\right)$, the probability of the model parameters given the data.
+
+            Note that parameter values with \textbf{high probability} will map to points with \textbf{low elevation}.
+
+            Consider a skater of mass $\mat{M}$ in this park with position $\vec{q}$ and momentum $\vec{p}$.
+
+            Then their total energy, called the \textbf{Hamiltonian}, is
+            \begin{equation*}
+                \mathcal{H}\left(\vec{q},\vec{p}\right) = U\left(\vec{q}\right) + K\left(\vec{p}\right),
+            \end{equation*}
+            the sum of their potential energy
             \begin{equation*}
                 U\left(\vec{q}\right) = -\log{\pi\left(\vec{q}\right)}
             \end{equation*}
-            and kinetic energy
+            and their kinetic energy
             \begin{equation*}
                 K\left(\vec{p}\right) = \frac{1}{2} \vec{p}^T \mat{M} \vec{p}.
             \end{equation*}
 
-            The system's dynamics are described by Hamilton's equations
-            \begin{align*}
-                \frac{\dd \vec{q}}{\dd t} &= \frac{\partial \mathcal{H}}{\partial \vec{p}}, \\
-                \frac{\dd \vec{p}}{\dd t} &= -\frac{\partial \mathcal{H}}{\partial \vec{q}},
-            \end{align*}
-            which are integrated to find the particle's position and momentum at a particular time.
+            The skater moves through the park according to Hamilton's equations,
+            \begin{equation*}
+                \frac{\dd \vec{q}}{\dd t} = \frac{\partial \mathcal{H}}{\partial \vec{p}},
+                \frac{\dd \vec{p}}{\dd t} = -\frac{\partial \mathcal{H}}{\partial \vec{q}},
+            \end{equation*}
+            which are integrated to find the skater's position and momentum at a particular time.
         }
 
         \block{The HMC Algorithm}{
 
-            The three operators.
+            We control the skater with three operators, described below.
+
+            We can combine these operations to express a single iteration of the HMC algorithm.
 
             \begin{algorithmic}[1]
-            \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
+            \Function {IterateHMC}{$\left\{\vec{q},\vec{p}\right\}$}
                 \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\op{R}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
                 \State $a \leftarrow \min\left(1, \exp\left(\mathcal{H}\left(\vec{q}, \vec{p}\right) - \mathcal{H}\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
                 \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
@@ -170,8 +186,10 @@
             \EndFunction
             \end{algorithmic}
 
+            \vspace{-36pt}
+
             \innerblock{Flip Operator}{
-                Flips the particle's momentum.
+                Flips the skater's momentum.
                 \begin{equation*}
                     \op{F}\left\{\vec{q},\vec{p}\right\} = \left\{\vec{q},-\vec{p}\right\}
                 \end{equation*}
@@ -197,7 +215,7 @@
             \vspace{-100pt}
 
             \innerblock{Leapfrog Operator}{
-                Simulates the motion of the particle for some time $s$.
+                Simulates the movement of the skater for some time $s$.
                 \begin{equation*}
                     \op{L}\left\{\vec{q}^t,\vec{p}^t\right\} = \left\{\vec{q}^{t+s},\vec{p}^{t+s}\right\}
                 \end{equation*}
@@ -222,10 +240,10 @@
             \vspace{-135pt}
 
             \innerblock{Momentum Randomization Operator}{
-                Randomizes the particle's momentum.
+                Changes the skater's momentum with a push in a random direction.
                 \begin{equation*}
                     \op{R}\left\{\vec{q},\vec{p}\right\} = \left\{\vec{q}, \sqrt{1-\alpha}\vec{p} + \sqrt{\alpha}\vec{n}\right\},
-                    \vec{n} \sim \norm{\vec{0}, \mat{M}^{-1}},
+                    \vec{n} \sim \norm{\vec{0}, \mat{M}^{-1}}
                 \end{equation*}
                 \centering
                 \begin{tikzpicture}[scale=1.5]
@@ -276,99 +294,145 @@
 
         \column{0.5}
 
-        \block{HMC versus MCMC}{
+        \block{The Bayesian Skatepark}{
 
             \centering
-                \begin{tikzpicture}
-                    % Tree
-                    \begin{scope}[shift={(2.5,18)}]
-                        \draw [line width=1mm] (0,0) -- (0,2);
-                        \draw [line width=1mm] (3,0) -- (3,2);
-                        \draw [line width=1mm] (0,2) -- (3,2);
-                        \draw [line width=1mm] (1.5,2) -- (1.5,4);
-                        \draw [line width=1mm] (6,0) -- (6,4);
-                        \draw [line width=1mm] (1.5,4) -- (6,4);
-                        \draw [line width=1mm] (3.75,4) -- (3.75,5);
-                        \draw [ultra thick, dashed] (0,0) -- (7.5,0);
-                        \draw [ultra thick, dashed] (0,2) -- (7.5,2);
-                        \draw [ultra thick, dashed] (0,4) -- (7.5,4);
-                        \node at (7.5,1) {$t_2$};
-                        \node at (7.5,3) {$t_1$};
-                    \end{scope}
-
-                    % Legend
-                    \begin{scope}[shift={(16,22)}]
-                        \draw [line width=1mm, red] (0,1) -- (1,1);
-                        \draw [line width=1mm, violet] (0,0) -- (1,0);
-                        \node [text=red, right] at (1.125,1) {\textbf{HMC}};
-                        \node [text=violet, right] at (1.125,0) {\textbf{MCMC}};
-                    \end{scope}
-
-                    \begin{axis}[colormap/greenyellow,
-                                 mesh/interior colormap={graygray}{color=(gray) color=(gray)},
-                                 /pgf/number format/1000 sep={},
-                                 view={72}{32},
-                                 xlabel=$t_1$,
-                                 ylabel=$t_2$,
-                                 zlabel=$U\left(\vec{q}\right)$,
-                                 zlabel style={rotate=-90},
-                                 xtick={0,0.2,...,2},
-                                 ytick={0,0.2,...,1},
-                                 ztick={1000,1020,...,1200}
-                                 ]
-                        \addplot3[surf] table {surface.dat};
-                        \addplot3[violet, mark=*, line width=1mm] table {mcmc.dat};
-                        \addplot3[red, mark=square*, line width=1mm] table {hmc.dat};
-                    \end{axis}
-                \end{tikzpicture}
-        }
-
-        \block{Performance}{
-
             \begin{tikzpicture}
-                \begin{semilogxaxis}[width=16cm,
-                                     xtick={8,16,32,64},
-                                     ytick={0,4,...,20},
-                                     extra y ticks=1,
-                                     extra y tick labels=,
-                                     extra y tick style={ grid=major, major grid style={thick} },
-                             % x tick label style={/pgf/number format/1000}
+                % Tree
+                \begin{scope}[shift={(4,18)}]
+                    \draw [line width=1mm] (0,0) -- (0,2);
+                    \draw [line width=1mm] (3,0) -- (3,2);
+                    \draw [line width=1mm] (0,2) -- (3,2);
+                    \draw [line width=1mm] (1.5,2) -- (1.5,4);
+                    \draw [line width=1mm] (6,0) -- (6,4);
+                    \draw [line width=1mm] (1.5,4) -- (6,4);
+                    \draw [line width=1mm] (3.75,4) -- (3.75,5);
+                    \draw [ultra thick, dashed] (0,0) -- (7.5,0);
+                    \draw [ultra thick, dashed] (0,2) -- (7.5,2);
+                    \draw [ultra thick, dashed] (0,4) -- (7.5,4);
+                    \node at (7.5,1) {$t_2$};
+                    \node at (7.5,3) {$t_1$};
+                \end{scope}
+
+                % Legend
+                \begin{scope}[shift={(16,4)}]
+                    \draw [line width=1mm, red] (0,1) -- (1,1);
+                    \draw [line width=1mm, violet] (0,0) -- (1,0);
+                    \node [text=red, right] at (1.125,1) {\textbf{16 steps of HMC}};
+                    \node [text=violet, right] at (1.125,0) {\textbf{64 steps of MCMC}};
+                \end{scope}
+
+                \begin{axis}[colormap/greenyellow,
+                             mesh/interior colormap={graygray}{color=(gray) color=(gray)},
+                             /pgf/number format/1000 sep={},
+                             view={72}{32},
+                             xlabel=$t_1$,
+                             ylabel=$t_2$,
+                             zlabel=$U\left(\vec{q}\right)$,
+                             zlabel style={rotate=-90},
+                             xtick={0,0.2,...,2},
+                             ytick={0,0.2,...,1},
+                             ztick={1000,1020,...,1200}
                              ]
-                    \addplot+[uoanavy, only marks,jitter=0.25] table {performance.dat};
-                    % \draw ({rel axis cs:0,0} |- {axis cs:Fx,1}) -- ({axis cs:Fz,1} -| {rel axis cs:1,0});
-                    % \addplot table[y={create col/linear regression={y=y}}] {performance.dat};
-                    \draw (axis cs:\pgfkeysvalueof{/pgfplots/xmin},1) -- (axis cs:\pgfkeysvalueof{/pgfplots/xmax},1);
-                    % \addplot+[boxplot] table {performance.dat};
-                \end{semilogxaxis}
+                    \addplot3[surf] table {surface.dat};
+                    \addplot3[violet, mark=*, line width=1mm] table {mcmc.dat};
+                    \addplot3[red, mark=square*, line width=1mm] table {hmc.dat};
+                \end{axis}
             \end{tikzpicture}
+        }
+
+        \block{Performance of HMC versus MCMC}{
+
+            \flushleft
+
+            \begin{multicols*}{2}
+                \setlength{\columnsep}{12pt}
+                \begin{itemize}
+                    \item Simulated 100 datasets for each problem size under Yule and HKY models
+                    \item Estimated node heights with HMC and MCMC, both optimally-tuned
+                    \item Measured effiency as \textbf{effective sample size} of tree length per unit time
+                    \item ESS = number of independent samples
+                    \item HMC \textbf{consistently out-performed} MCMC for all problem sizes
+                    \item On average, HMC was \textbf{5 times more efficient} than MCMC
+                \end{itemize}
+
+                \begin{tikzpicture}
+                    \begin{semilogxaxis}[width=16cm,
+                                         xtick={8,16,32,64},
+                                         ytick={0,4,...,20},
+                                         extra y ticks=1,
+                                         extra y tick labels=,
+                                         extra y tick style={ grid=major, major grid style={thick} },
+                                         log ticks with fixed point,
+                                         xlabel=Number of Taxa,
+                                         ylabel=Relative Efficiency of HMC
+                                 ]
+                        \addplot+[uoanavy, only marks, mark options={fill=uoanavy}, jitter=0.25] table {performance.dat};
+                        \draw (axis cs:\pgfkeysvalueof{/pgfplots/xmin},1) -- (axis cs:\pgfkeysvalueof{/pgfplots/xmax},1);
+                        \node at (60, 21) {$n = 100$};
+                    \end{semilogxaxis}
+                \end{tikzpicture}
+
+            \end{multicols*}
 
         }
 
-        \block{Future Directions}{
+        \block{Future Work}{
             \begin{itemize}
-                \item Automatic tuning of parameters
+                \item Inferring parameters for other evolutionary models; e.g., substitution and clock models
+                \item Creating a skatepark with many tree topologies and the physics to move between them
+                \item Automatic tuning of HMC algorithm for optimal performance, esp. the skater's mass $\mat M$
+                \item Implementing and testing more sophisticated flavours of HMC
+                \item Applying HMC to the analysis of real datasets
             \end{itemize}
         }
 
         \block{Acknowledgements}{
             \flushleft
+            \begin{multicols*}{2}
+                \begin{itemize}
+                    \item New Zealand eScience Infrastructure
+                    \item SMBE Undergraduate Travel Award
+                \end{itemize}
+            \end{multicols*}
             \begin{itemize}
-                \item New Zealand eScience Infrastructure
-                \item SMBE Undergraduate Travel Award
+                \item Members of the Computational Evolution Group at The University of Auckland
             \end{itemize}
         }
 
         \block{References}{
-            \flushleft\small
-            \hangindent=50pt Drummond et al. `Bayesian phylogenetics with BEAUti and the BEAST 1.7'. \emph{Mol Biol Evol} 29.8 (2012).
+            \flushleft
 
-            \hangindent=50pt Duane et al. `Hybrid Monte Carlo'. \emph{Physics Letters B} 195.2 (1987).
+            AJ Drummond et al. \emph{Mol Biol Evol} 29.8 (2012). \texttt{\doi{10.1093/molbev/mss075}}
 
-            \hangindent=50pt Metropolis et al. `Equation of State Calculations by Fast Computing Machines'. \emph{J Chem Phys} 21.6 (1953).
+            S Duane et al. \emph{Physics Letters B} 195.2 (1987). \texttt{\doi{10.1016/0370-2693(87)91197-X}}
 
-            \hangindent=50pt Neal. `MCMC Using Hamiltonian Dynamics'. \emph{Handbook of Markov Chain Monte Carlo}. Boca Raton, Florida: Chapman and Hall/CRC, 2011.
+            N Metropolis et al. \emph{J Chem Phys} 21.6 (1953). \texttt{\doi{10.1063/1.1699114}}
 
-            \hangindent=50pt Schadt et al. `Computational Advances in Maximum Likelihood Methods for Molecular Phylogeny'. \emph{Genome Research} 8.3 (1998).
+            RM Neal. \emph{Handbook of Markov Chain Monte Carlo}. Chapman and Hall/CRC (2011).
+
+            EE Schadt et al. \emph{Genome Research} 8.3 (1998). \texttt{\doi{10.1101/gr.8.3.222}}
+        }
+
+        \block{}{
+        \begin{multicols*}{2}
+
+            \flushleft
+
+            \qrcode[height=5cm]{10.6084/m9.figshare.1473743}
+            Download this poster.
+
+            \vspace{25pt} \texttt{\doi{10.6084/m9.figshare.1473743}}
+
+            \columnbreak
+
+            \qrcode[height=5cm]{http://git.io/vqlCz}
+            Fork the HMC source code.
+
+            \vspace{25pt} \texttt{http://git.io/vqlCz}
+
+        \end{multicols*}
+
         }
 
     \end{columns}
