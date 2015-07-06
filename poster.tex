@@ -20,12 +20,14 @@
     \hfill
     \begin{minipage}{0.2\linewidth}
        \centering
-       \includegraphics[width=16cm]{uoa}
-       % \begin{tikzpicture}
-       %     % \clip [rotate around={45:(1,1)}] (0,0) rectangle (2,2);
-       %     \node at (1,1) {\includegraphics[width=16cm]{uoa}};
-       %     \node [rectangle] {};
-       % \end{tikzpicture}
+       \begin{tikzpicture}[scale=0.07]
+           \begin{scope}[y={(0,-1)}]
+               \input{uoa.tex}
+           \end{scope}
+           \begin{scope}[y={(0,-1)},shift={(0.75,50)}]
+               \input{awc.tex}
+           \end{scope}
+       \end{tikzpicture}
     \end{minipage}
 }
 \makeatother
@@ -51,7 +53,7 @@
 
 \usetheme{Autumn}
 \usecolorstyle{Russia}
-\definecolor{uoanavy}{RGB}{0,60,103}
+\definecolor{uoanavy}{RGB}{0,60,127}
 \colorlet{titlebgcolor}{uoanavy}
 \colorlet{blocktitlebgcolor}{uoanavy}
 \useblockstyle{MySlide}
@@ -155,15 +157,15 @@
 
             \begin{algorithmic}[1]
             \Function {HamiltonUpdate}{$\left\{\vec{q},\vec{p}\right\}$}
-                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
-                \State $a \leftarrow \min\left(1, \exp\left(H\left(\vec{q}, \vec{p}\right) - H\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
+                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\op{R}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
+                \State $a \leftarrow \min\left(1, \exp\left(\mathcal{H}\left(\vec{q}, \vec{p}\right) - \mathcal{H}\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
                 \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
                     \begin{cases}
                         \left\{\vec{q}^\prime, \vec{p}^\prime\right\} & \text{with probability } a \\
                         \left\{\vec{q},\vec{p}\right\} & \text{with probability } 1 - a
                     \end{cases}$
                     \Comment{Accept or reject proposal}
-                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{R}\op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Randomize the momentum}
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Flip momentum}
                 \State \Return $\left\{\vec{q},\vec{p}\right\}$
             \EndFunction
             \end{algorithmic}
@@ -181,18 +183,21 @@
 
                     \draw[-{Triangle[scale=0.5]}, line width=1cm] (3.75,0) -- (5.5,0);
                     \node at (4.5,1) {$\op F$};
+
+                    \begin{scope}[shift={(9.25,0)}]
+                        \draw [very thick] (-3,0) -- (3,0);
+                        \draw [very thick] (0,-3) -- (0,3);
+                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-3,-1.875);
+                    \end{scope}
                 \end{tikzpicture}
                 \begin{tikzpicture}[scale=1.5]
-                    \draw [very thick] (-3,0) -- (3,0);
-                    \draw [very thick] (0,-3) -- (0,3);
-                    \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-3,-1.875);
                 \end{tikzpicture}
             }
 
             \vspace{-100pt}
 
             \innerblock{Leapfrog Operator}{
-                Simulates the motion of the particle for some time $s=\epsilon L$ by making $L$ leapfrog steps of size $\epsilon$.
+                Simulates the motion of the particle for some time $s$.
                 \begin{equation*}
                     \op{L}\left\{\vec{q}^t,\vec{p}^t\right\} = \left\{\vec{q}^{t+s},\vec{p}^{t+s}\right\}
                 \end{equation*}
@@ -204,12 +209,13 @@
 
                     \draw[-{Triangle[scale=0.5]}, line width=1cm] (3.75,0) -- (5.5,0);
                     \node at (4.5,1) {$\op L$};
-                \end{tikzpicture}
-                \begin{tikzpicture}[scale=1.5]
+
+                    \begin{scope}[shift={(9.25,0)}]
                     \draw [very thick] (-3,0) -- (3,0);
                     \draw [very thick] (0,-3) -- (0,3);
                     \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (1.5,2) -- (1,1);
                     \draw [dashed, line width=1.5mm] (-2, -1) -- (-1.5, -0.5) -- (-0.75, 0) -- (0.5, 0.25) -- (2, -0.25) -- (2.75, 0.25) -- (3, 1) -- (2.75, 1.75) -- (2.25, 2.25) -- (1.5,2);
+                    \end{scope}
                 \end{tikzpicture}
             }
 
@@ -229,39 +235,40 @@
 
                     \draw[-{Triangle[scale=0.5]}, line width=1cm] (3.75,0) -- (5.5,0);
                     \node at (4.5,1) {$\op R$};
-                \end{tikzpicture}
-                \begin{tikzpicture}[scale=1.5]
-                    \draw [very thick] (-3,0) -- (3,0);
-                    \draw [very thick] (0,-3) -- (0,3);
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.1798842696593654,-1.4155589244095708);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-0.6008855294301123,-0.6325503943607074);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-0.433635757898837,-2.110341758060427);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (0.1203974434179913,-0.291105605921284);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.747006309898812,0.14720266924040804);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.15927910124528,-1.2791810510482209);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.061932819568363,0.9037350636252279);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.526733010065044,0.30727194147897574);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.692667393072648,-1.5883973996582634);
-                    \end{scope}
-                    \begin{scope}[transparency group, opacity=0.5]
-                        \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.3925483516600632,-2.1358524884658907);
+
+                    \begin{scope}[shift={(9.25,0)}]
+                        \draw [very thick] (-3,0) -- (3,0);
+                        \draw [very thick] (0,-3) -- (0,3);
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.1798842696593654,-1.4155589244095708);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-0.6008855294301123,-0.6325503943607074);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-0.433635757898837,-2.110341758060427);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (0.1203974434179913,-0.291105605921284);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.747006309898812,0.14720266924040804);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.15927910124528,-1.2791810510482209);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.061932819568363,0.9037350636252279);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-2.526733010065044,0.30727194147897574);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.692667393072648,-1.5883973996582634);
+                        \end{scope}
+                        \begin{scope}[transparency group, opacity=0.5]
+                            \draw [arrows={center*-Latex[scale=1]}, line width=1.5mm] (-2,-1) -- (-1.3925483516600632,-2.1358524884658907);
+                        \end{scope}
                     \end{scope}
                 \end{tikzpicture}
             }
@@ -274,24 +281,28 @@
             \centering
                 \begin{tikzpicture}
                     % Tree
-                    \draw [line width=1mm] (2.5,18) -- (2.5,20);
-                    \draw [line width=1mm] (5.5,18) -- (5.5,20);
-                    \draw [line width=1mm] (2.5,20) -- (5.5,20);
-                    \draw [line width=1mm] (4,20) -- (4,22);
-                    \draw [line width=1mm] (8.5,18) -- (8.5,22);
-                    \draw [line width=1mm] (4,22) -- (8.5,22);
-                    \draw [line width=1mm] (6.25,22) -- (6.25,23);
-                    \draw [ultra thick, dashed] (2.5,18) -- (10,18);
-                    \draw [ultra thick, dashed] (2.5,20) -- (10,20);
-                    \draw [ultra thick, dashed] (2.5,22) -- (10,22);
-                    \node at (10,19) {$t_2$};
-                    \node at (10,21) {$t_1$};
+                    \begin{scope}[shift={(2.5,18)}]
+                        \draw [line width=1mm] (0,0) -- (0,2);
+                        \draw [line width=1mm] (3,0) -- (3,2);
+                        \draw [line width=1mm] (0,2) -- (3,2);
+                        \draw [line width=1mm] (1.5,2) -- (1.5,4);
+                        \draw [line width=1mm] (6,0) -- (6,4);
+                        \draw [line width=1mm] (1.5,4) -- (6,4);
+                        \draw [line width=1mm] (3.75,4) -- (3.75,5);
+                        \draw [ultra thick, dashed] (0,0) -- (7.5,0);
+                        \draw [ultra thick, dashed] (0,2) -- (7.5,2);
+                        \draw [ultra thick, dashed] (0,4) -- (7.5,4);
+                        \node at (7.5,1) {$t_2$};
+                        \node at (7.5,3) {$t_1$};
+                    \end{scope}
 
                     % Legend
-                    \draw [line width=1mm, red] (16,23) -- (17,23);
-                    \draw [line width=1mm, violet] (16,22) -- (17,22);
-                    \node [text=red, right] at (17.125,23) {\textbf{HMC}};
-                    \node [text=violet, right] at (17.125,22) {\textbf{MCMC}};
+                    \begin{scope}[shift={(16,22)}]
+                        \draw [line width=1mm, red] (0,1) -- (1,1);
+                        \draw [line width=1mm, violet] (0,0) -- (1,0);
+                        \node [text=red, right] at (1.125,1) {\textbf{HMC}};
+                        \node [text=violet, right] at (1.125,0) {\textbf{MCMC}};
+                    \end{scope}
 
                     \begin{axis}[colormap/greenyellow,
                                  mesh/interior colormap={graygray}{color=(gray) color=(gray)},
@@ -340,9 +351,11 @@
         }
 
         \block{Acknowledgements}{
-            SMBE Undergraduate Travel Award \\
-            \includegraphics[width=10cm]{awc}
-            \includegraphics[width=10cm]{nesi}
+            \flushleft
+            \begin{itemize}
+                \item New Zealand eScience Infrastructure
+                \item SMBE Undergraduate Travel Award
+            \end{itemize}
         }
 
         \block{References}{
