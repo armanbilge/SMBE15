@@ -10,5 +10,5 @@ file 'poster.pdf' => ['poster.tex', 'surface.dat', 'mcmc.dat', 'hmc.dat', 'perfo
 CLOBBER.include 'poster.pdf'
 
 rule '.pdf' => '.tex' do |t|
-  sh "pdflatex --shell-escape #{t.source}"
+  sh "pdflatex #{t.source}"
 end

@@ -1,11 +1,9 @@
 \documentclass{tikzposter}
 \tikzposterlatexaffectionproofoff
 
-% \settitle{\vbox{
-%      \color{titlefgcolor} {\bfseries \Huge \sc \@title \par}
-%      \vspace*{1em}
-%      {\LARGE \@author \par} \vspace*{1em} {\large \@institute}
-% }}
+\usepackage{hyperref}
+\usepackage{doi}
+\usepackage{qrcode}
 
 \makeatletter
 \renewcommand\TP@maketitle{%
@@ -68,14 +66,19 @@
 \usetikzlibrary{arrows.meta}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
-\usepgfplotslibrary{statistics}
 \pgfplotsset{width=32cm,
              compat=newest,
              jitter/.style={
                  x filter/.code={\pgfmathparse{\pgfmathresult+rnd*#1-#1/2}}
              },
-             jitter/.default=0
+             jitter/.default=0,
+             select coords between index/.style 2 args={
+                 x filter/.code={
+                     \ifnum\coordindex<#1\def\pgfmathresult{}\fi
+                     \ifnum\coordindex>#2\def\pgfmathresult{}\fi
+                 }
              }
+ }
 
 \makeatletter
 \pgfarrowsdeclare{center*}{center*}
@@ -103,11 +106,7 @@
 
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\algrenewcomment[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
-
-\usepackage{hyperref}
-\usepackage{doi}
-\usepackage{qrcode}
+\algrenewcomment[2][.41\linewidth]{\leavevmode\hfill\makebox[#1][l]{\(\triangleright\)~#2}}
 
 \usepackage[none]{hyphenat}
 \frenchspacing
@@ -127,7 +126,7 @@
                 \item We want to sample model parameters $\vec{\theta}$ according to probability given the data $P\left(\vec{\theta}\mid\vec{D}\right)$
                 \item Sampling usually done with \textbf{Markov chain Monte Carlo} random walk algorithm
                 \item Random walks move through space slowly and make for \textbf{inefficient samplers}
-                \item \textbf{Hamiltonian Monte Carlo} algorithm applies Newton's laws of motion to methodically traverse the space and \textbf{avoid random walk behaviour}
+                \item \textbf{Hamiltonian Monte Carlo} algorithm applies Newton's laws of motion to methodically traverse the space and \textbf{avoid random walk behavior}
                 \item HMC uses the space's slope, an \textbf{expensive but theoretically rewarding} calculation
             \end{itemize}
         }
@@ -173,7 +172,7 @@
 
             \begin{algorithmic}[1]
             \Function {IterateHMC}{$\left\{\vec{q},\vec{p}\right\}$}
-                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\op{R}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal}
+                \State $\left\{\vec{q}^\prime, \vec{p}^\prime\right\} \leftarrow \op{F}\op{L}\op{R}\left\{\vec{q},\vec{p}\right\}$ \Comment{Make proposal and flip momentum}
                 \State $a \leftarrow \min\left(1, \exp\left(\mathcal{H}\left(\vec{q}, \vec{p}\right) - \mathcal{H}\left(\vec{q}^\prime, \vec{p}^\prime\right)\right)\right)$ \Comment{Calculate acceptance probability}
                 \State $\left\{\vec{q},\vec{p}\right\} \leftarrow
                     \begin{cases}
@@ -181,8 +180,8 @@
                         \left\{\vec{q},\vec{p}\right\} & \text{with probability } 1 - a
                     \end{cases}$
                     \Comment{Accept or reject proposal}
-                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Flip momentum}
-                \State \Return $\left\{\vec{q},\vec{p}\right\}$
+                \State $\left\{\vec{q},\vec{p}\right\} \leftarrow \op{F}\left\{\vec{q},\vec{p}\right\}$ \Comment{Flip momentum back}
+                \State \Return $\left\{\vec{q},\vec{p}\right\}$ \Comment{Return next sample}
             \EndFunction
             \end{algorithmic}
 
@@ -332,11 +331,15 @@
                              zlabel style={rotate=-90},
                              xtick={0,0.2,...,2},
                              ytick={0,0.2,...,1},
-                             ztick={1000,1020,...,1200}
+                             ztick={1000,1020,...,1200},
+                             clip mode=individual
                              ]
                     \addplot3[surf] table {surface.dat};
-                    \addplot3[violet, mark=*, line width=1mm] table {mcmc.dat};
-                    \addplot3[red, mark=square*, line width=1mm] table {hmc.dat};
+                    \addplot3[violet, mark=square*, line width=1mm] table {mcmc.dat};
+                    \addplot3[violet, mark=square*, mark size=2.5mm, select coords between index={0}{0}] table {mcmc.dat};
+                    \addplot3[red, mark=*, line width=1mm] table {hmc.dat};
+                    \addplot3[red, mark=*, mark size=2mm, select coords between index={0}{0}] table {hmc.dat};
+
                 \end{axis}
             \end{tikzpicture}
         }
@@ -350,7 +353,7 @@
                 \begin{itemize}
                     \item Simulated 100 datasets for each problem size under Yule and HKY models
                     \item Estimated node heights with HMC and MCMC, both optimally-tuned
-                    \item Measured effiency as \textbf{effective sample size} of tree length per unit time
+                    \item Measured efficiency as \textbf{effective sample size} of tree length per unit time
                     \item ESS = number of independent samples
                     \item HMC \textbf{consistently out-performed} MCMC for all problem sizes
                     \item On average, HMC was \textbf{5 times more efficient} than MCMC
@@ -381,8 +384,8 @@
             \begin{itemize}
                 \item Inferring parameters for other evolutionary models; e.g., substitution and clock models
                 \item Creating a skatepark with many tree topologies and the physics to move between them
-                \item Automatic tuning of HMC algorithm for optimal performance, esp. the skater's mass $\mat M$
-                \item Implementing and testing more sophisticated flavours of HMC
+                \item Automatic tuning of HMC for optimal performance, especially the skater's mass $\mat M$
+                \item Implementing and testing more sophisticated flavors of HMC
                 \item Applying HMC to the analysis of real datasets
             \end{itemize}
         }
@@ -415,24 +418,23 @@
         }
 
         \block{}{
-        \begin{multicols*}{2}
+            \begin{multicols*}{2}
 
-            \flushleft
+                \flushleft
 
-            \qrcode[height=5cm]{10.6084/m9.figshare.1473743}
-            Download this poster.
+                \qrcode[height=5cm]{http://dx.doi.org/10.6084/m9.figshare.1473743}
+                Download this poster.
 
-            \vspace{25pt} \texttt{\doi{10.6084/m9.figshare.1473743}}
+                \vspace{25pt} \texttt{\doi{10.6084/m9.figshare.1473743}}
 
-            \columnbreak
+                \columnbreak
 
-            \qrcode[height=5cm]{http://git.io/vqlCz}
-            Fork the HMC source code.
+                \qrcode[height=5cm]{http://git.io/vqlCz}
+                Fork the HMC source code.
 
-            \vspace{25pt} \texttt{http://git.io/vqlCz}
+                \vspace{25pt} \texttt{http://git.io/vqlCz}
 
-        \end{multicols*}
-
+            \end{multicols*}
         }
 
     \end{columns}
