@@ -2,4 +2,4 @@
 
 Poster presented at SMBE15 in the symposium *Untangling information, noise, and phylogenetic reconstruction in genome scale data*.
 
-doi: [`10.6084/m9.figshare.1473743`](http://dx.doi.org/10.6084/m9.figshare.1473743)
+doi: [![DOI](http://img.shields.io/badge/DOI-10.6084%2Fm9.figshare.1473743-55CDC5.svg)](http://dx.doi.org/10.6084/m9.figshare.1473743)
